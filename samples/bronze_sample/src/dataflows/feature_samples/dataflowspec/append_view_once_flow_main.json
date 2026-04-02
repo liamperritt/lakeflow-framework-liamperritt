@@ -13,7 +13,7 @@
         {
             "flowGroupId": "main",
             "flows": {
-                "f_customer_append_view_once_batch": {
+                "f_customer_append_view_once": {
                     "flowType": "append_view",
                     "flowDetails": {
                         "targetTable": "append_view_once_flow",
