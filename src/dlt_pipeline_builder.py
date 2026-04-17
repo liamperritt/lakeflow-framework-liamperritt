@@ -10,7 +10,7 @@ import pyspark.sql.types as T
 from pyspark.sql import SparkSession
 from typing import Dict, Any
 
-from constants import(
+from constants import (
     FrameworkPaths, FrameworkSettings, PipelineBundlePaths, DLTPipelineSettingKeys, SupportedSpecFormat
 )
 from dataflow import DataFlow
@@ -114,6 +114,7 @@ class DLTPipelineBuilder:
 
         self.bundle_path = config_values[DLTPipelineSettingKeys.BUNDLE_SOURCE_PATH]
         self.framework_path = config_values[DLTPipelineSettingKeys.FRAMEWORK_SOURCE_PATH]
+        self._framework_config_path = utility.resolve_framework_config_path(self.framework_path)
         self.workspace_host = config_values[DLTPipelineSettingKeys.WORKSPACE_HOST]
 
         # Load optional parameters
@@ -186,7 +187,10 @@ class DLTPipelineBuilder:
 
     def _load_framework_global_config_file(self) -> Dict[str, Any]:
         """Load a global config file"""
-        global_config_paths = [os.path.join(self.framework_path, path) for path in FrameworkPaths.GLOBAL_CONFIG]
+        global_config_paths = [
+            os.path.join(self.framework_path, self._framework_config_path, path)
+            for path in FrameworkPaths.GLOBAL_CONFIG
+        ]
         
         # Check if more than one global config exists
         existing_configs = [path for path in global_config_paths if os.path.exists(path)]
@@ -284,7 +288,7 @@ class DLTPipelineBuilder:
         
         # Build framework substitutions paths
         framework_subs_paths = [
-            os.path.join(self.framework_path, FrameworkPaths.CONFIG_PATH, workspace_env + path) 
+            os.path.join(self.framework_path, self._framework_config_path, workspace_env + path)
             for path in FrameworkPaths.GLOBAL_SUBSTITUTIONS
         ]
         self.logger.info("Framework substitutions paths: %s", framework_subs_paths)
@@ -315,7 +319,7 @@ class DLTPipelineBuilder:
         
         # Build framework secrets paths
         framework_secrets_config_paths = [
-            os.path.join(self.framework_path, FrameworkPaths.CONFIG_PATH, workspace_env + path)
+            os.path.join(self.framework_path, self._framework_config_path, workspace_env + path)
             for path in FrameworkPaths.GLOBAL_SECRETS
         ]
         
@@ -370,7 +374,9 @@ class DLTPipelineBuilder:
             return
 
         self.logger.info("Operational Metadata: layer set to %s", layer)
-        metadata_path = os.path.join(self.framework_path, f"config/operational_metadata_{layer}.json")
+        metadata_path = os.path.join(
+            self.framework_path, self._framework_config_path, f"operational_metadata_{layer}.json"
+        )
         self.logger.info("Operational Metadata Path: %s", metadata_path)
         metadata_json = utility.get_json_from_file(metadata_path, False)
         self.operational_metadata_schema = (
